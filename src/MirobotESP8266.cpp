@@ -1,51 +1,79 @@
+#ifdef ESP8266
+
 #include "Arduino.h"
 #include "Mirobot.h"
 
-HotStepper motor1(&PORTB, 0b00011101);
-HotStepper motor2(&PORTD, 0b11110000);
-CmdProcessor p;
+ShiftStepper motor1(0);
+ShiftStepper motor2(1);
 
-// Pointer to the bootloader memory location
-void* bl = (void *) 0x3c00;
+Wifi wifi;
+CmdManager manager;
+static char tmpBuff[10];
 
 Mirobot::Mirobot(){
   blocking = true;
   lastLedChange = millis();
   calibratingSlack = false;
   beepComplete = 0;
-  version(2);
+  version(3);
 }
 
-void Mirobot::setup(){
-  HotStepper::setup(TIMER1INT);
+void Mirobot::begin(){
+  ShiftStepper::setup(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
   // Set up the pen arm servo
   pinMode(SERVO_PIN, OUTPUT);
   // Set up the collision sensor inputs and state
-  pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
-  pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
-  _collideState = NORMAL;
-  //setPenState(UP);
-  // Set up the status LED
-  pinMode(STATUS_LED, OUTPUT);
-}
-
-void Mirobot::setup(Stream &s){
-  HotStepper::setup(TIMER1INT);
-  // Set up the pen arm servo
-  pinMode(SERVO_PIN, OUTPUT);
-  // Set up the collision sensor inputs and state
-  pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
-  pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
-  _collideState = NORMAL;
+  //pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
+  //pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
+  _collideStatus = NORMAL;
   setPenState(UP);
-  // We will be non-blocking so we can continue to process serial input
-  blocking = false;
-  // Set up the command processor
-  p.setup(s, self());
   // Set up the status LED
-  pinMode(STATUS_LED, OUTPUT);
+  //pinMode(STATUS_LED, OUTPUT);
   initSettings();
-  penup();
+  initCmds();
+}
+
+void Mirobot::enableSerial(){
+  blocking = false;
+  // Set up Serial and add it to be processed
+  Serial.begin(230400);
+  Serial.setTimeout(1);
+  manager.addStream(Serial);
+}
+
+void Mirobot::enableWifi(){
+  wifi.begin();
+}
+
+void Mirobot::initCmds(){
+  manager.setMirobot(self());
+  //             Command name        Handler function             // Returns immediately
+  manager.addCmd("version",          &Mirobot::_version,          true);
+  manager.addCmd("ping",             &Mirobot::_ping,             true);
+  manager.addCmd("uptime",           &Mirobot::_uptime,           true);
+  manager.addCmd("uptime",           &Mirobot::_uptime,           true);
+  manager.addCmd("pause",            &Mirobot::_pause,            true);
+  manager.addCmd("resume",           &Mirobot::_resume,           true);
+  manager.addCmd("stop",             &Mirobot::_stop,             true);
+  manager.addCmd("collideState",     &Mirobot::_collideState,     true);
+  manager.addCmd("collideNotify",    &Mirobot::_collideNotify,    true);
+  manager.addCmd("followState",      &Mirobot::_followState,      true);
+  manager.addCmd("followNotify",     &Mirobot::_followNotify,     true);
+  manager.addCmd("slackCalibration", &Mirobot::_slackCalibration, true);
+  manager.addCmd("moveCalibration",  &Mirobot::_moveCalibration,  true);
+  manager.addCmd("turnCalibration",  &Mirobot::_turnCalibration,  true);
+  manager.addCmd("calibrateMove",    &Mirobot::_calibrateMove,    true);
+  manager.addCmd("calibrateTurn",    &Mirobot::_calibrateTurn,    true);
+  manager.addCmd("forward",          &Mirobot::_forward,          false);
+  manager.addCmd("back",             &Mirobot::_back,             false);
+  manager.addCmd("right",            &Mirobot::_right,            false);
+  manager.addCmd("left",             &Mirobot::_left,             false);
+  manager.addCmd("penup",            &Mirobot::_penup,            false);
+  manager.addCmd("pendown",          &Mirobot::_pendown,          false);
+  manager.addCmd("follow",           &Mirobot::_follow,           false);
+  manager.addCmd("collide",          &Mirobot::_collide,          false);
+  manager.addCmd("beep",             &Mirobot::_beep,             false);
+  manager.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack,   false);
 }
 
 void Mirobot::initSettings(){
@@ -64,42 +92,111 @@ void Mirobot::initSettings(){
   }
 }
 
+
+void Mirobot::_version(char &arg, char &msg){
+  strcpy(&msg, MIROBOT_VERSION);
+}
+
+void Mirobot::_ping(char &arg, char &msg){}
+
+void Mirobot::_uptime(char &arg, char &msg){
+  sprintf(&msg, "%lu", millis());
+}
+
+void Mirobot::_pause(char &arg, char &msg){
+  pause();
+}
+
+void Mirobot::_resume(char &arg, char &msg){
+  resume();
+}
+
+void Mirobot::_stop(char &arg, char &msg){
+  stop();
+}
+
+void Mirobot::_collideState(char &arg, char &msg){
+  collideState(msg);
+}
+
+void Mirobot::_collideNotify(char &arg, char &msg){
+  collideNotify = !!strcmp(&arg, "false");
+}
+
+void Mirobot::_followState(char &arg, char &msg){
+  sprintf(&msg, "%d", followState());
+}
+
+void Mirobot::_followNotify(char &arg, char &msg){
+  followNotify = !!strcmp(&arg, "false");
+}
+
+void Mirobot::_slackCalibration(char &arg, char &msg){
+  sprintf(&msg, "%d", settings.slackCalibration);
+}
+
+void Mirobot::_moveCalibration(char &arg, char &msg){
+  dtostrf(settings.moveCalibration , 2, 6, &msg);
+}
+
+void Mirobot::_turnCalibration(char &arg, char &msg){
+  dtostrf(settings.turnCalibration , 2, 6, &msg);
+}
+
+void Mirobot::_calibrateMove(char &arg, char &msg){
+  calibrateMove(atof(&arg));
+}
+
+void Mirobot::_calibrateTurn(char &arg, char &msg){
+  calibrateTurn(atof(&arg));
+}
+
+void Mirobot::_forward(char &arg, char &msg){
+  forward(atoi(&arg));
+}
+
+void Mirobot::_back(char &arg, char &msg){
+  back(atoi(&arg));
+}
+
+void Mirobot::_right(char &arg, char &msg){
+  right(atoi(&arg));
+}
+
+void Mirobot::_left(char &arg, char &msg){
+  left(atoi(&arg));
+}
+
+void Mirobot::_penup(char &arg, char &msg){
+  penup();
+}
+
+void Mirobot::_pendown(char &arg, char &msg){
+  pendown();
+}
+
+void Mirobot::_follow(char &arg, char &msg){
+  follow();
+}
+
+void Mirobot::_collide(char &arg, char &msg){
+  collide();
+}
+
+void Mirobot::_beep(char &arg, char &msg){
+  beep(atoi(&arg));
+}
+
+void Mirobot::_calibrateSlack(char &arg, char &msg){
+  calibrateSlack(atoi(&arg));
+}
+
 void Mirobot::saveSettings(){
   EEPROM.write(EEPROM_OFFSET, MAGIC_BYTE_1);
   EEPROM.write(EEPROM_OFFSET + 1, MAGIC_BYTE_2);
   for (unsigned int t=0; t<sizeof(settings); t++){
     EEPROM.write(EEPROM_OFFSET + 2 + t, *((char*)&settings + t));
   }
-}
-
-void Mirobot::setHwVersion(char &version){
-  char v[4];
-  int i;
-  int v_ptr = 0;
-  char *ptr = &version;
-  for(i = 0; i < 9; i++){
-    if(ptr[i] >= 0x30 && ptr[i] <= 0x39){
-      v[v_ptr++] = ptr[i];
-    }
-    if(ptr[i] == '.'){
-      v[v_ptr++] = '\0';
-      break;
-    }
-  }
-  settings.hwmajor = atoi(v);
-  v_ptr = 0;
-  for(i = i; i < 9; i++){
-    if(ptr[i] >= 0x30 && ptr[i] <= 0x39){
-      v[v_ptr++] = ptr[i];
-    }
-    if(ptr[i] == '\0'){
-      v[v_ptr++] = '\0';
-      break;
-    }
-  }
-  v[v_ptr] = '\0';
-  settings.hwminor = atoi(v);
-  saveSettings();
 }
 
 void Mirobot::takeUpSlack(byte motor1Dir, byte motor2Dir){
@@ -171,9 +268,6 @@ void Mirobot::stop(){
 }
 
 void Mirobot::reset(){
-  // Give the response message time to get out
-  delay(100);
-  goto *bl;
 }
 
 void Mirobot::follow(){
@@ -189,6 +283,7 @@ void Mirobot::collide(){
 }
 
 void Mirobot::collideState(char &state){
+  /*
   boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
   boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
   if(collideLeft && collideRight){
@@ -200,6 +295,8 @@ void Mirobot::collideState(char &state){
   }else{
     strcpy(&state, "none");
   }
+  */
+  strcpy(&state, "none");
 }
 
 void Mirobot::beep(int duration){
@@ -249,40 +346,43 @@ void Mirobot::followHandler(){
 }
 
 void Mirobot::collideHandler(){
+  /*
   boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
   boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
-  if(_collideState == NORMAL){
+  if(_collideStatus == NORMAL){
     if(collideLeft){
-      _collideState = LEFT_REVERSE;
+      _collideStatus = LEFT_REVERSE;
       back(50);
     }else if(collideRight){
-      _collideState = RIGHT_REVERSE;
+      _collideStatus = RIGHT_REVERSE;
       back(50);
     }else{
       forward(10);
     }
   }else if(motor1.ready() && motor2.ready()){
-    switch(_collideState){
+    switch(_collideStatus){
       case LEFT_REVERSE :
-        _collideState = LEFT_TURN;
+        _collideStatus = LEFT_TURN;
         right(90);
         break;
       case RIGHT_REVERSE :
-        _collideState = RIGHT_TURN;
+        _collideStatus = RIGHT_TURN;
         left(90);
         break;
       case LEFT_TURN :
       case RIGHT_TURN :
-        _collideState = NORMAL;
+        _collideStatus = NORMAL;
       case NORMAL :
         break;
     }
   }
+  */
 }
 
 void Mirobot::ledHandler(){
   long t = millis();
-  digitalWrite(STATUS_LED, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
+  //digitalWrite(STATUS_LED, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
+  //digitalWrite(STATUS_LED, HIGH);
 }
 
 void Mirobot::servoHandler(){
@@ -298,7 +398,7 @@ void Mirobot::servoHandler(){
         delayMicroseconds(pendown_delay);
       }
       digitalWrite(SERVO_PIN, LOW);
-    } 
+    }
   }
 }
 
@@ -311,17 +411,18 @@ void Mirobot::autoHandler(){
 }
 
 void Mirobot::sensorNotifier(){
+  /*
   if(collideNotify){
     boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
     boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
     char currentCollideState = collideRight | (collideLeft << 1);
     if(currentCollideState != lastCollideState){
       if(collideLeft && collideRight){
-        p.collideNotify("both");
+        manager.collideNotify("both");
       }else if(collideLeft){
-        p.collideNotify("left");
+        manager.collideNotify("left");
       }else if(collideRight){
-        p.collideNotify("right");
+        manager.collideNotify("right");
       }
       lastCollideState = currentCollideState;
     }
@@ -329,21 +430,17 @@ void Mirobot::sensorNotifier(){
   if(followNotify){
     int currentFollowState = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
     if(currentFollowState != lastFollowState){
-      p.followNotify(currentFollowState);
+      manager.followNotify(currentFollowState);
     }
     lastFollowState = currentFollowState;
   }
+  */
 }
 
 // This allows for runtime configuration of which hardware is used
 void Mirobot::version(char v){
   versionNum = v;
-  if(v == 1){
-    steps_per_mm = STEPS_PER_MM_V1;
-    steps_per_degree = STEPS_PER_DEGREE_V1;
-    penup_delay = PENUP_DELAY_V1;
-    pendown_delay = PENDOWN_DELAY_V1;
-  }else if(v == 2){
+  if(v == 3){
     steps_per_mm = STEPS_PER_MM_V2;
     steps_per_degree = STEPS_PER_DEGREE_V2;
     penup_delay = PENUP_DELAY_V2;
@@ -375,11 +472,21 @@ void Mirobot::calibrateHandler(){
   }
 }
 
+void Mirobot::checkReady(){
+  if(manager.in_process && ready()){
+    manager.sendComplete();
+  }
+}
+
 void Mirobot::process(){
   ledHandler();
   servoHandler();
   autoHandler();
   calibrateHandler();
   sensorNotifier();
-  p.process();
+  checkReady();
+  manager.process();
+  wifi.wifiLoop();
 }
+
+#endif

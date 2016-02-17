@@ -12,17 +12,10 @@ class Mirobot;
 typedef enum {EXPECT_ATTR, ATTR, DELIM, VAL} parseState_t;
 typedef enum {WAITING, WEBSOCKET_INIT, WEBSOCKET_RESPOND, WEBSOCKET_READY, HTTP_INIT, HTTP_RESPOND, HTTP_READY} httpState_t;
 typedef enum {RAW, HTTP, WEBSOCKET} socketMode_t;
-typedef enum {CLOSED, START, OPENING, READY, RECEIVING, CLOSING, FLUSHING} atState_t;
+typedef enum {AT_CLOSED, AT_START, AT_OPENING, AT_READY, AT_RECEIVING, AT_CLOSING, AT_FLUSHING} atState_t;
 
 typedef void (* fp_main) (void *, char *);
 typedef boolean (* fp_ready) (void *);
-
-struct UserCmd {
-  const char *cmd;
-  byte type;
-  fp_main fn_main;
-  fp_ready fn_ready;
-};
 
 class CmdProcessor {
   public:
