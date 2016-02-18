@@ -13,7 +13,7 @@ Wifi::Wifi(){
 }
 
 
-void Wifi::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
 
     switch(type) {
         case WStype_DISCONNECTED:
@@ -30,7 +30,7 @@ void Wifi::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t 
         case WStype_TEXT:
             USE_SERIAL.printf("[%u] Message: %s\n", num, payload);
             //webSocket.sendTXT(num,payload);
-            _s->printf("%s",payload);
+            //_s->printf("%s",payload);
             break;
     }
 
@@ -38,8 +38,13 @@ void Wifi::webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t 
 
 void Wifi::wifiWriteLoop() {
   char buff[180];
-  webSocket.sendTXT(0,_s->readString());
-  _s->flush();
+  webSocket.sendTXT(0,"FUUUUUCK");
+  /*sprintf (buff, "%d plus %d is %d", 5, 5, 5+5);
+  _s->print("Cunt!\n");
+  if (_s->available() > 0){
+    webSocket.sendTXT(0,_s->readString());
+    _s->flush();
+  }*/
 }
 
 void Wifi::begin(Stream &s) {
@@ -95,7 +100,7 @@ void Wifi::begin(Stream &s) {
 
     // start webSocket server
     webSocket.begin();
-    webSocket.onEvent(Wifi::webSocketEvent(num,type,payload,length));
+    webSocket.onEvent(webSocketEvent);
 
     if(MDNS.begin("esp8266")) {
         USE_SERIAL.println("MDNS responder started");
