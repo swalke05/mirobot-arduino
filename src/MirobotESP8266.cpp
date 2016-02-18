@@ -42,7 +42,9 @@ void Mirobot::enableSerial(){
 }
 
 void Mirobot::enableWifi(){
-  wifi.begin();
+  Stream *_s;
+  wifi.begin(*_s);
+  manager.addStream(*_s);
 }
 
 void Mirobot::initCmds(){
@@ -485,8 +487,9 @@ void Mirobot::process(){
   calibrateHandler();
   sensorNotifier();
   checkReady();
-  manager.process();
   wifi.wifiLoop();
+  manager.process();
+  wifi.wifiWriteLoop();
 }
 
 #endif

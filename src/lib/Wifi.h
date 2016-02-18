@@ -9,12 +9,13 @@
 
 #define USE_SERIAL Serial
 
-void webSocketEvent(uint8_t, WStype_t, uint8_t *, size_t);
-
 class Wifi {
   public:
     Wifi();
-    void begin();
+    void begin(Stream &s);
     void wifiLoop();
+    void wifiWriteLoop();
   private:
+    void webSocketEvent(uint8_t, WStype_t, uint8_t *, size_t);
+    Stream *_s;
 };
