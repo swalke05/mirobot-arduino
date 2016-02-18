@@ -8,14 +8,23 @@ CmdManager::CmdManager(){
 }
 
 void CmdManager::addStream(Stream &s){
-  _s = &s;
+  for(int i=0;i<MAX_STREAM; i++){
+    if(_s[i] == NULL) {
+      _s[i] = &s;
+      break;
+    }
+  }
 }
 void CmdManager::setMirobot(Mirobot &m){
   _m = &m;
 }
 void CmdManager::addCmd(const char cmd[], MirobotMemFn func, bool immediate){
   if (cmd_counter == CMD_COUNT) {
-    _s->println("Too many commands defined");
+    for(int i=0;i<MAX_STREAM; i++){
+      if(_s[i] != NULL){
+        _s[i]->println("Too many commands defined");
+      }
+    }
     return;
   }
   _cmds[cmd_counter].cmd = cmd;
@@ -34,21 +43,25 @@ void CmdManager::process(){
   */
 
   // process incoming data
-  if (_s->available() > 0){
-    last_char = millis();
-    char incomingByte = _s->read();
-    if((incomingByte == '\r' || incomingByte == '\n') && processLine()){
-      // It's been successfully processed as a line
-      input_buffer_pos = 0;
-    }else{
-      // Not a line to process so store for processing
-      input_buffer[input_buffer_pos++] = incomingByte;
-      input_buffer[input_buffer_pos] = 0;
-    }
-  }else{
-    //reset the input buffer if nothing is received for 1/2 second to avoid things getting messed up
-    if(millis() - last_char >= 500){
-      input_buffer_pos = 0;
+  for(int i=0;i<MAX_STREAM; i++){
+    if(_s[i] != NULL){
+      if (_s[i]->available() > 0){
+        last_char = millis();
+        char incomingByte = _s[i]->read();
+        if((incomingByte == '\r' || incomingByte == '\n') && processLine()){
+          // It's been successfully processed as a line
+          input_buffer_pos = 0;
+        }else{
+          // Not a line to process so store for processing
+          input_buffer[input_buffer_pos++] = incomingByte;
+          input_buffer[input_buffer_pos] = 0;
+        }
+      }else{
+        //reset the input buffer if nothing is received for 1/2 second to avoid things getting messed up
+        if(millis() - last_char >= 500){
+          input_buffer_pos = 0;
+        }
+      }
     }
   }
 }
@@ -77,7 +90,7 @@ boolean CmdManager::processJSON(){
 void CmdManager::processCmd(char &cmd, char &arg, char &id){
   int cmd_num, i;
   char msg[41] = {0,};
-  
+
   cmd_num = -1;
   for(i = 0; i < cmd_counter; i++){
     if(!strcmp(&cmd, _cmds[i].cmd)){
@@ -119,23 +132,27 @@ void CmdManager::sendResponse(const char status[], const char msg[], char &id){
   unsigned char len = 13 + strlen(status);
   if(strcmp(msg, "")){ len += 10 + strlen(msg); }
   if(strcmp(&id, "")){ len += 9  + strlen(&id); }
-  
-  _s->print("{\"status\":\"");
-  _s->print(status);
-  _s->print("\"");
 
-  if(strcmp(msg, "")){
-    _s->print(", \"msg\":\"");
-    _s->print(msg);
-    _s->print("\"");
+  for(int i=0;i<MAX_STREAM; i++){
+    if(_s[i] != NULL){
+      _s[i]->print("{\"status\":\"");
+      _s[i]->print(status);
+      _s[i]->print("\"");
+
+      if(strcmp(msg, "")){
+        _s[i]->print(", \"msg\":\"");
+        _s[i]->print(msg);
+        _s[i]->print("\"");
+      }
+      if(strcmp(&id, "")){
+        _s[i]->print(", \"id\":\"");
+        _s[i]->print(&id);
+        _s[i]->print("\"");
+      }
+      _s[i]->print("}");
+      _s[i]->print("\r\n");
+    }
   }
-  if(strcmp(&id, "")){
-    _s->print(", \"id\":\"");
-    _s->print(&id);
-    _s->print("\"");
-  }
-  _s->print("}");
-  _s->print("\r\n");
 }
 
 void CmdManager::collideNotify(const char state[]){
@@ -160,7 +177,7 @@ void CmdManager::extractAttr(const char attr[], char *json, char *output, char l
   boolean match = false;
   boolean in_brackets = false;
   boolean in_quotes = false;
-  
+
   while(*json != '\0'){
     switch(parseState){
       case JSON_EXPECT_JSON_ATTR:

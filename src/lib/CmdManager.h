@@ -10,6 +10,7 @@ class CmdManager;
 
 #define INPUT_BUFFER_LENGTH 180
 #define CMD_COUNT 30
+#define MAX_STREAM 2
 
 typedef enum {JSON_EXPECT_JSON_ATTR, JSON_ATTR, JSON_JSON_DELIM, JSON_VAL} jsonParseState_t;
 
@@ -40,7 +41,7 @@ class CmdManager {
     void processCmd(char &cmd, char &arg, char &id);
     void runCmd(char &cmd, char &arg, char &id);
     void sendResponse(const char state[], const char msg[], char &id);
-    Stream* _s;
+    Stream* _s[MAX_STREAM];
     char webSocketKey[61];
     char input_buffer[INPUT_BUFFER_LENGTH];
     byte input_buffer_pos;
