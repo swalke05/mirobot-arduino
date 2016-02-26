@@ -1,8 +1,8 @@
 #include "Arduino.h"
 #include "Wifi.h"
-#define NETWORKNAME "tinkerbox"
-#define NETWORKPASS "faceface01"
-
+#define NETWORKNAME "Coop-302"
+#define NETWORKPASS "302-coop"
+#include "PString.h"
 ESP8266WiFiMulti WiFiMulti;
 
 ESP8266WebServer server = ESP8266WebServer(80);
@@ -37,10 +37,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 }
 
 void Wifi::wifiWriteLoop() {
-  char buff[180];
-  webSocket.sendTXT(0,"FUUUUUCK");
+  char buffer[50];
+  PString mystring(buffer, sizeof(buffer));
+  mystring.print("Hi, my name is ");
+  webSocket.sendTXT(0,mystring);
   /*sprintf (buff, "%d plus %d is %d", 5, 5, 5+5);
-  _s->print("Cunt!\n");
   if (_s->available() > 0){
     webSocket.sendTXT(0,_s->readString());
     _s->flush();
