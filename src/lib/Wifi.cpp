@@ -40,9 +40,20 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 }
 
 void Wifi::wifiWriteLoop() {
-  BufferSerial * x; 
+  uint8_t buffer[180];
 
-  x->begin(1);
+
+  BufferSerial  myStream(buffer,uint16_t(sizeof(buffer)));
+
+  myStream.begin(2);
+
+  myStream.write("Testing");
+  myStream.flush();
+  myStream.write("Asdf");
+  myStream.write("cool I would.");
+ 
+
+
   //stream.read()
   //char buffer[180];
   //PString mystring(buffer, sizeof(buffer));
@@ -55,7 +66,7 @@ void Wifi::wifiWriteLoop() {
 
 
 
- //  webSocket.sendTXT(0,buffer);    
+   webSocket.sendTXT(0,buffer);    
   /*sprintf (buff, "%d plus %d is %d", 5, 5, 5+5);
   if (_s->available() > 0){
     webSocket.sendTXT(0,_s->readString());
