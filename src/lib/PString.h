@@ -71,6 +71,7 @@ public:
 
   // call this to re-use an existing string
   void begin();
+  void flush(void);
 
   // This function allows assignment to an arbitrary scalar value like str = myfloat;
   template<class T> inline PString &operator =(T arg) 

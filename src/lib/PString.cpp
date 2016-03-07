@@ -26,12 +26,19 @@ void PString::begin()
     _buf[0] = '\0';
 }
 
+  
+void PString::flush(void){
+    delete[] (_buf);
+
+}
+
 #if defined(ARDUINO) && ARDUINO >= 100
 size_t PString::write(uint8_t b)
 #else
 void PString::write(uint8_t b)
 #endif
 {
+
   if (_cur + 1 < _buf + _size)
   {
     *_cur++ = (char)b;
