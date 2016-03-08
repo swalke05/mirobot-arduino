@@ -1,13 +1,14 @@
 #include "CmdManager.h"
 #include "sha1.h"
 #include "Base64.h"
+#include "BufferSerial.h"
 
 CmdManager::CmdManager(){
   in_process = false;
   current_id[0] = 0;
 }
 
-void CmdManager::addStream(Stream &s){
+void CmdManager::addStream(BufferSerial &s){
   for(int i=0;i<MAX_STREAM; i++){
     if(_s[i] == NULL) {
       _s[i] = &s;

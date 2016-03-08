@@ -42,7 +42,9 @@ void Mirobot::enableSerial(){
 }
 
 void Mirobot::enableWifi(){
-  Stream *_s;
+  char buffer[180];
+  BufferSerial *_s;
+ 
   wifi.begin(*_s);
   manager.addStream(*_s);
 }
