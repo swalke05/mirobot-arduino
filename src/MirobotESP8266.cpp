@@ -2,13 +2,14 @@
 
 #include "Arduino.h"
 #include "Mirobot.h"
-
+#include "lib/BufferSerial.h"
 ShiftStepper motor1(0);
 ShiftStepper motor2(1);
 
 Wifi wifi;
 CmdManager manager;
 static char tmpBuff[10];
+
 
 Mirobot::Mirobot(){
   blocking = true;
@@ -42,9 +43,16 @@ void Mirobot::enableSerial(){
 }
 
 void Mirobot::enableWifi(){
-  Stream *_s;
-  wifi.begin(*_s);
-  manager.addStream(*_s);
+  uint8_t buffer[180];
+  BufferSerial  myStream(buffer,uint16_t(sizeof(buffer)));
+  BufferSerial * testStream; 
+  testStream = &myStream;
+
+  //Stream *_s;
+  //BufferSerial 
+  wifi.begin(*testStream);
+  Serial.println("does it get here?");
+  manager.addStream(*testStream);
 }
 
 void Mirobot::initCmds(){
@@ -487,8 +495,12 @@ void Mirobot::process(){
   calibrateHandler();
   sensorNotifier();
   checkReady();
+  Serial.println("before wifi loop");
   wifi.wifiLoop();
+  Serial.println("after wifi loop");
   manager.process();
+  Serial.println("right b4 wifiwriteloop");
+ 
   wifi.wifiWriteLoop();
 }
 

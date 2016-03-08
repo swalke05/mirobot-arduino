@@ -1,8 +1,8 @@
 #include "Arduino.h"
 #include "Wifi.h"
 #include "BufferSerial.h"
-#define NETWORKNAME "TBPM"
-#define NETWORKPASS "donger420"
+#define NETWORKNAME "tinkerbox"
+#define NETWORKPASS "faceface01"
 
 #include "PString.h"
 
@@ -40,8 +40,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 }
 
 void Wifi::wifiWriteLoop() {
+  
   uint8_t buffer[180];
-
 
   BufferSerial  myStream(buffer,uint16_t(sizeof(buffer)));
 
@@ -144,6 +144,8 @@ void Wifi::begin(Stream &s) {
     // Add service to MDNS
     MDNS.addService("http", "tcp", 80);
     MDNS.addService("ws", "tcp", 8899);
+
+   // USE_SERIAL.println("shes a bogdan");
 
 }
 

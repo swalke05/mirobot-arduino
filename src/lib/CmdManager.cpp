@@ -45,7 +45,11 @@ void CmdManager::process(){
   // process incoming data
   for(int i=0;i<MAX_STREAM; i++){
     if(_s[i] != NULL){
+      Serial.printf("i = %d\n",i);
+
+
       if (_s[i]->available() > 0){
+
         last_char = millis();
         char incomingByte = _s[i]->read();
         if((incomingByte == '\r' || incomingByte == '\n') && processLine()){
