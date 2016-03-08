@@ -4,7 +4,6 @@
 
 #include "Arduino.h"
 #include "Mirobot.h"
-#include "BufferSerial.h"
 
 HotStepper motor1(&PORTB, 0b00011101);
 HotStepper motor2(&PORTD, 0b11110000);
@@ -36,7 +35,7 @@ void Mirobot::setup(){
   initSettings();
 }
 
-void Mirobot::setup(BufferSerial &s){
+void Mirobot::setup(Stream &s){
   setup()
   // We will be non-blocking so we can continue to process serial input
   blocking = false;

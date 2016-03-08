@@ -74,7 +74,7 @@ void Wifi::wifiWriteLoop() {
   }*/
 }
 
-void Wifi::begin(BufferSerial &s) {
+void Wifi::begin(Stream &s) {
     _s = &s;
     //USE_SERIAL.begin(921600);
     USE_SERIAL.begin(115200);
