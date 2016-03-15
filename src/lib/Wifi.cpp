@@ -10,6 +10,7 @@ ESP8266WiFiMulti WiFiMulti;
 
 ESP8266WebServer server = ESP8266WebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(8899);
+//extern Stream * _GlobalStream;  
 
 Wifi::Wifi(){
 
@@ -17,7 +18,6 @@ Wifi::Wifi(){
 
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
-
     switch(type) {
         case WStype_DISCONNECTED:
             USE_SERIAL.printf("[%u] Disconnected!\n", num);
@@ -32,50 +32,24 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             break;
         case WStype_TEXT:
             USE_SERIAL.printf("[%u] Message: %s\n", num, payload);
-            //webSocket.sendTXT(num,payload);
-            //_s->printf("%s",payload);
+            USE_SERIAL.print("Sending Payload\n");
+            _GlobalStream->printf("%s",payload);
+            USE_SERIAL.print("Recieving Payload\n");
+
             break;
     }
 
 }
 
 void Wifi::wifiWriteLoop() {
-  
-  uint8_t buffer[180];
-
-  BufferSerial  myStream(buffer,uint16_t(sizeof(buffer)));
-
-  myStream.begin(2);
-
-  myStream.write("Testing");
-  myStream.flush();
-  myStream.write("Asdf");
-  myStream.write("cool I would.");
- 
-
-
-  //stream.read()
-  //char buffer[180];
-  //PString mystring(buffer, sizeof(buffer));
-  //mystring.print("Hi, my name is ");
-  //mystring.print(" Two");
-
- // mystring.flush();
-  //mystring.begin();
-//  mystring.print("sdfg");
-
-
-
-   webSocket.sendTXT(0,buffer);    
-  /*sprintf (buff, "%d plus %d is %d", 5, 5, 5+5);
-  if (_s->available() > 0){
-    webSocket.sendTXT(0,_s->readString());
-    _s->flush();
-  }*/
+    USE_SERIAL.println("Are we getting to the wifi write loop?");
+   if (_GlobalStream->available() >0){
+     webSocket.sendTXT(0,_GlobalStream->readString());    
+     _GlobalStream->flush();
+   }
 }
 
-void Wifi::begin(Stream &s) {
-    _s = &s;
+void Wifi::begin(char * buffer) {
     //USE_SERIAL.begin(921600);
     USE_SERIAL.begin(115200);
 

@@ -7,26 +7,28 @@ CmdManager::CmdManager(){
   current_id[0] = 0;
 }
 
-void CmdManager::addStream(Stream &s){
-  for(int i=0;i<MAX_STREAM; i++){
-    if(_s[i] == NULL) {
-      _s[i] = &s;
-      break;
-    }
-  }
-}
+
 void CmdManager::setMirobot(Mirobot &m){
   _m = &m;
 }
+
+
+void CmdManager::sendBuffer(char * buffer)
+{
+   // buffer objet passed in
+  _buffer = buffer
+}
+
 void CmdManager::addCmd(const char cmd[], MirobotMemFn func, bool immediate){
   if (cmd_counter == CMD_COUNT) {
-    for(int i=0;i<MAX_STREAM; i++){
-      if(_s[i] != NULL){
-        _s[i]->println("Too many commands defined");
-      }
+
+    if (buffer != NULL){
+      strcpy(buffer,"Too many commands defined")
     }
-    return;
-  }
+    else{
+      return;
+    }
+
   _cmds[cmd_counter].cmd = cmd;
   _cmds[cmd_counter].func = func;
   _cmds[cmd_counter].immediate = immediate;
@@ -47,8 +49,16 @@ void CmdManager::process(){
     if(_s[i] != NULL){
       Serial.printf("i = %d\n",i);
 
+      Serial.println("before avail\n");
+      if (i == 1){
+       if (_buffer != NULL){
+          Serial.println(" i = 1after avail\n");
 
+       }
+      }
       if (_s[i]->available() > 0){
+         Serial.println("after avail\n");
+
 
         last_char = millis();
         char incomingByte = _s[i]->read();
@@ -61,8 +71,10 @@ void CmdManager::process(){
           input_buffer[input_buffer_pos] = 0;
         }
       }else{
+        Serial.println("Not available");
         //reset the input buffer if nothing is received for 1/2 second to avoid things getting messed up
         if(millis() - last_char >= 500){
+          Serial.printf("%s\n",input_buffer);
           input_buffer_pos = 0;
         }
       }

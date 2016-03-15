@@ -7,6 +7,7 @@ class Mirobot;
 class CmdManager;
 
 #include "Mirobot.h"
+#include "BufferSerial.h"
 
 #define INPUT_BUFFER_LENGTH 180
 #define CMD_COUNT 30
@@ -28,7 +29,7 @@ class CmdManager {
   public:
     CmdManager();
     void addCmd(const char cmd[], MirobotMemFn func, bool immediate);
-    void addStream(Stream &s);
+    void sendingBuffer(char *buffer);
     void process();
     void collideNotify(const char msg[]);
     void followNotify(int state);
@@ -41,7 +42,7 @@ class CmdManager {
     void processCmd(char &cmd, char &arg, char &id);
     void runCmd(char &cmd, char &arg, char &id);
     void sendResponse(const char state[], const char msg[], char &id);
-    Stream* _s[MAX_STREAM];
+    char * _buffer
     char webSocketKey[61];
     char input_buffer[INPUT_BUFFER_LENGTH];
     byte input_buffer_pos;

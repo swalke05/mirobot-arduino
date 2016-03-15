@@ -1,8 +1,10 @@
 #ifdef ESP8266
 
+#include <stdlib.h>
 #include "Arduino.h"
 #include "Mirobot.h"
 #include "lib/BufferSerial.h"
+
 ShiftStepper motor1(0);
 ShiftStepper motor2(1);
 
@@ -34,26 +36,28 @@ void Mirobot::begin(){
   initCmds();
 }
 
-void Mirobot::enableSerial(){
-  blocking = false;
-  // Set up Serial and add it to be processed
-  Serial.begin(230400);
-  Serial.setTimeout(1);
-  manager.addStream(Serial);
-}
+
 
 void Mirobot::enableWifi(){
   uint8_t buffer[180];
   BufferSerial  myStream(buffer,uint16_t(sizeof(buffer)));
-  BufferSerial * testStream; 
-  testStream = &myStream;
+
+  //testStream = &myStream;
+  Serial.println("before begin?");
+
+ // myStream.available();
+  //exit(0);
+
+  Serial.println("after begin?");
 
   //Stream *_s;
   //BufferSerial 
-  wifi.begin(*testStream);
-  Serial.println("does it get here?");
-  manager.addStream(*testStream);
+  //sending buffer over wifi
+  wifi.begin(myStream);
+
+  manager.sendBuffer(myStream)
 }
+
 
 void Mirobot::initCmds(){
   manager.setMirobot(self());

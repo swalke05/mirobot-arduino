@@ -9,13 +9,13 @@
 
 #define USE_SERIAL Serial
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
+static char  buffer[180];  
 
 class Wifi {
+
   public:
     Wifi();
-    void begin(Stream &s);
+    void begin(char * string);
     void wifiLoop();
     void wifiWriteLoop();
-  private:
-    Stream *_s;
 };

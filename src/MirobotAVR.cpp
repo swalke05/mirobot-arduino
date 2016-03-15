@@ -35,7 +35,7 @@ void Mirobot::setup(){
   initSettings();
 }
 
-void Mirobot::setup(Stream &s){
+void Mirobot::setup(BufferSerial s){
   setup()
   // We will be non-blocking so we can continue to process serial input
   blocking = false;
